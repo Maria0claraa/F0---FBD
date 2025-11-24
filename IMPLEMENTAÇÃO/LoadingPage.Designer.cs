@@ -44,7 +44,9 @@
             this.ImageList4 = new System.Windows.Forms.ImageList(this.components);
             this.Label5 = new System.Windows.Forms.Label();
             this.PictureBox6 = new System.Windows.Forms.PictureBox();
-            this.ProgressBar7 = new System.Windows.Forms.ProgressBar();
+            this.ProgressBar7 = new GradientProgressBar();
+            this.ProgressBar7.StartColor = Color.DarkRed;   // início do degradê
+            this.ProgressBar7.EndColor = Color.Red;         // fim do degradê
             this.Timer8 = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.PictureBox6)).BeginInit();
             this.SuspendLayout();
@@ -157,7 +159,7 @@
         private System.Windows.Forms.ImageList ImageList4;
         private System.Windows.Forms.Label Label5;
         private System.Windows.Forms.PictureBox PictureBox6;
-        private System.Windows.Forms.ProgressBar ProgressBar7;
+        private GradientProgressBar ProgressBar7;
         private System.Windows.Forms.Timer Timer8;
     }
 }
