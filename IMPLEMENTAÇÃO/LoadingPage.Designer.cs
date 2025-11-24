@@ -68,6 +68,7 @@
             this.Label1.Size = new System.Drawing.Size(53, 59);
             this.Label1.TabIndex = 1;
             this.Label1.Text = "0";
+            this.Label1.ForeColor = System.Drawing.Color.FromArgb(204, 0, 0);
             // 
             // Label2
             // 
@@ -118,7 +119,7 @@
             // 
             this.ProgressBar7.BackColor = System.Drawing.SystemColors.ActiveBorder;
             this.ProgressBar7.ForeColor = System.Drawing.Color.Firebrick;
-            this.ProgressBar7.Location = new System.Drawing.Point(92, 240);
+            this.ProgressBar7.Location = new System.Drawing.Point(86, 240);
             this.ProgressBar7.Name = "ProgressBar7";
             this.ProgressBar7.Size = new System.Drawing.Size(540, 23);
             this.ProgressBar7.TabIndex = 7;

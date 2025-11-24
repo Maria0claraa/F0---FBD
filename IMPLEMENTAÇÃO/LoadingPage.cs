@@ -12,6 +12,8 @@ namespace ProjetoFBD
         {
             InitializeComponent();
 
+            this.StartPosition = FormStartPosition.CenterScreen;
+
             var assembly = Assembly.GetExecutingAssembly();
             using var stream = assembly.GetManifestResourceStream("ProjetoFBD.logo.png");
             if (stream != null)
