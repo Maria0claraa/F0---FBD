@@ -123,11 +123,18 @@ namespace ProjetoFBD
     }
 }
 
-
-        private void OpenHomePage(string userRole)
-        {
-            MessageBox.Show($"Login bem-sucedido como {userRole}. PRÓXIMA TELA: HOME PAGE.", "Sucesso!");
-            this.Close(); 
-        }
+private void OpenHomePage(string userRole)
+{
+    // 1. Esconde o formulário de Login (não o fecha, apenas esconde)
+    this.Hide(); 
+    
+    // 2. Cria e mostra a nova Home Page, passando o papel do utilizador
+    HomePage homePage = new HomePage(userRole);
+    
+    // 3. Liga um evento para saber quando a Home Page é fechada
+    homePage.FormClosed += (s, args) => this.Close(); // Fecha o LoginForm (o programa) quando a HomePage é fechada
+    
+    homePage.Show(); 
+}
     }
 }
