@@ -56,6 +56,5 @@ namespace ProjetoFBD
 
         // Variável de Controlo do Background
         private System.Windows.Forms.PictureBox pbFundo; // NOVO
-        private System.Windows.Forms.Panel pnlMenu; // Opcional, se o pnlMainMenu for movido para o designer
     }
 }

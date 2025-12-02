@@ -238,7 +238,17 @@ namespace ProjetoFBD
             btnItem.MouseLeave += (s, e) => btnItem.BackColor = Color.White;
 
             parentPanel.Controls.Add(btnItem);
+            if (parentPanel == pnlGrandPrix && text == "GP")
+    {
+
+        btnItem.Click += (s, e) => OpenGPForm();
+    }
+    else if (parentPanel == pnlGrandPrix && text == "Circuits")
+    {
+        btnItem.Click += (s, e) => OpenCircuitForm(); // <--- NOVO
+    }
         }
+        
 
         private void ToggleDropdown(Panel targetPanel)
         {
@@ -248,5 +258,33 @@ namespace ProjetoFBD
             
             targetPanel.Visible = !targetPanel.Visible;
         }
+
+
+        // Ficheiro: HomePage.cs
+
+private void OpenGPForm()
+{
+    // 1. Esconder o painel dropdown após a seleção
+    pnlGrandPrix.Visible = false;
+    
+    // 2. Abre o formulário da Lista de Grandes Prémios
+    // Passamos o papel do utilizador para que o GrandePremioForm saiba quem pode editar
+    GPForm gpForm = new GPForm(this.userRole);
+    
+    // Usa ShowDialog() para que o utilizador feche a lista antes de interagir novamente com a HomePage/Menu
+    gpForm.ShowDialog(); 
+}
+
+private void OpenCircuitForm()
+{
+    // 1. Esconder o painel dropdown após a seleção
+    pnlGrandPrix.Visible = false;
+    
+    // 2. Abre o formulário da Lista de Circuitos
+    CircuitForm circuitForm = new CircuitForm(this.userRole);
+    
+    // Usa ShowDialog() para que o utilizador feche a lista antes de interagir novamente com a HomePage/Menu
+    circuitForm.ShowDialog();
+}
     }
 }

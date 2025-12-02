@@ -7,13 +7,7 @@ namespace ProjetoFBD
     public partial class LoginForm : Form
     {
         private bool areFieldsVisible = false;
-
-        private const string connectionString =
-    "Server=tcp:mednat.ieeta.pt\\SQLSERVER,8101;" +
-    "Database=p3g9;" +
-    "User Id=p3g9;" +
-    "Password=MQ_IB_FBD_2526;" +
-    "TrustServerCertificate=True;";
+        string connectionString = DbConfig.ConnectionString;
 
         public LoginForm()
         {
