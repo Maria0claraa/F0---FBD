@@ -14,12 +14,16 @@ namespace ProjetoFBD
             InitializeComponent(); 
             
             this.StartPosition = FormStartPosition.CenterScreen;
+            this.MinimumSize = new Size(600, 500);
             
-            this.btnStaff.Click += new System.EventHandler(this.btnStaff_Click);
-            this.btnGuest.Click += new System.EventHandler(this.btnGuest_Click);
-            this.btnVoltar.Click += new System.EventHandler(this.btnVoltar_Click);
+            // Attach event handlers
+            this.btnStaff.Click += btnStaff_Click;
+            this.btnGuest.Click += btnGuest_Click;
+            this.btnVoltar.Click += btnVoltar_Click;
             
-            this.btnVoltar.Visible = false; 
+            // Permitir Enter nos TextBox para submeter
+            this.txtUsername.KeyPress += (s, e) => { if (e.KeyChar == (char)Keys.Return) { btnStaff_Click(null, EventArgs.Empty); e.Handled = true; } };
+            this.txtPassword.KeyPress += (s, e) => { if (e.KeyChar == (char)Keys.Return) { btnStaff_Click(null, EventArgs.Empty); e.Handled = true; } };
         }
 
 
@@ -32,15 +36,17 @@ namespace ProjetoFBD
                 
                 pnlStaffFields.Visible = true;
                 areFieldsVisible = true;
-                btnStaff.Text = "CONTINUAR"; 
                 
                 btnGuest.Visible = false; 
                 btnVoltar.Visible = true; 
                 
-                btnVoltar.Location = new Point(80, 340);
-                btnStaff.Location = new Point(250, 340); 
+                // Animar transição
+                btnStaff.Location = new Point(335, 400); 
+                btnStaff.Text = "CONTINUAR";
+                btnVoltar.Location = new Point(115, 400);
                 
                 this.ResumeLayout(false);
+                txtUsername.Focus();
             }
             else
             {
@@ -56,11 +62,15 @@ namespace ProjetoFBD
             areFieldsVisible = false;
             
             btnStaff.Text = "STAFF";
-            btnStaff.Location = new Point(80, 270); 
-            btnGuest.Location = new Point(250, 270); 
+            btnStaff.Location = new Point(115, 210); 
+            btnGuest.Location = new Point(335, 210); 
             
             btnGuest.Visible = true;
-            btnVoltar.Visible = false; 
+            btnVoltar.Visible = false;
+
+            // Limpar campos
+            txtUsername.Clear();
+            txtPassword.Clear();
 
             this.ResumeLayout(false);
         }

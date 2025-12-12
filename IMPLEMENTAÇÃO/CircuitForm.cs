@@ -54,7 +54,7 @@ namespace ProjetoFBD
             pnlStaffActions = new Panel
             {
                 Location = new Point(10, 580),
-                Size = new Size(700, 50),  // ← Aumentar para 700 (4 botões x 130 + espaços)
+                Size = new Size(840, 50),  // 5 botões x 140 + espaços
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left
             };
             this.Controls.Add(pnlStaffActions);
@@ -64,18 +64,20 @@ namespace ProjetoFBD
             Button btnSave = CreateActionButton("Save Changes", new Point(0, 5));
             Button btnAdd = CreateActionButton("Add New", new Point(140, 5));
             Button btnDelete = CreateActionButton("Delete Selected", new Point(280, 5));
-            Button btnRefresh = CreateActionButton("Refresh", new Point(420, 5)); // <-- NOVO BOTÃO
+            Button btnEdit = CreateActionButton("Edit Selected", new Point(420, 5));
+            Button btnRefresh = CreateActionButton("Refresh", new Point(560, 5));
 
             btnSave.Click += btnSave_Click;
             btnAdd.Click += btnAdd_Click;
             btnDelete.Click += btnDelete_Click;
-            btnRefresh.Click += btnRefresh_Click; // <-- NOVO EVENTO
-            this.pnlStaffActions.Controls.Add(btnDelete);
-            // You will need to implement btnDelete_Click separately
-            
+            btnEdit.Click += btnEdit_Click;
+            btnRefresh.Click += btnRefresh_Click;
+
+            // Adiciona os botões ao painel (cada botão apenas uma vez)
             pnlStaffActions.Controls.Add(btnSave);
             pnlStaffActions.Controls.Add(btnAdd);
             pnlStaffActions.Controls.Add(btnDelete);
+            pnlStaffActions.Controls.Add(btnEdit);
             pnlStaffActions.Controls.Add(btnRefresh);
             
             // --- 3. Role-Based Access Control (RBAC) ---
@@ -95,17 +97,54 @@ namespace ProjetoFBD
         // Helper method for action buttons
         private Button CreateActionButton(string text, Point location)
         {
-            Button btn = new Button 
-            { 
-                Text = text, 
-                Location = location, 
-                Size = new Size(130, 40), 
+            Button btn = new Button
+            {
+                Text = text,
+                Location = location,
+                Size = new Size(130, 40),
                 BackColor = Color.FromArgb(204, 0, 0),
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                FlatAppearance = { BorderSize = 0 }
+                FlatStyle = FlatStyle.Flat
             };
+            // configure FlatAppearance after construction (safer em object initializer)
+            btn.FlatAppearance.BorderSize = 0;
+            btn.Cursor = Cursors.Hand;
             return btn;
+        }
+
+        // -------------------------------------------------------------------------
+        // UI event handlers
+        // -------------------------------------------------------------------------
+
+        private void btnEdit_Click(object? sender, EventArgs e)
+        {
+            if (userRole != "Staff") return;
+            if (dgvCircuitos == null || dgvCircuitos.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a row to edit.", "Edit", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    return;
+}
+
+// Select first selected row and begin editing the first editable cell (excluding PK)
+var row = dgvCircuitos.SelectedRows[0];
+            int editColIndex = -1;
+            for (int i = 0; i < dgvCircuitos.Columns.Count; i++)
+            {
+                var col = dgvCircuitos.Columns[i];
+                if (!col.ReadOnly && col.Visible)
+                {
+                    editColIndex = i; break;
+                }
+            }
+            if (editColIndex >= 0)
+            {
+                dgvCircuitos.CurrentCell = row.Cells[editColIndex];
+                dgvCircuitos.BeginEdit(true);
+            }
+            else
+            {
+                MessageBox.Show("No editable column found.", "Edit", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         // -------------------------------------------------------------------------
@@ -175,6 +214,12 @@ private void btnSave_Click(object? sender, EventArgs e)
     {
         string connectionString = DbConfig.ConnectionString;
 
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            MessageBox.Show("Connection string is not configured.", "Configuration Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
         // Utilizamos 'using' para garantir que a conexão fecha automaticamente
         using (SqlConnection connection = new SqlConnection(connectionString))
         {
@@ -183,9 +228,9 @@ private void btnSave_Click(object? sender, EventArgs e)
                 dgvCircuitos.EndEdit(); 
                 
                 // CRÍTICO: Ligar os comandos gerados à NOVA conexão ativa
-                dataAdapter.InsertCommand!.Connection = connection;
-                dataAdapter.UpdateCommand!.Connection = connection;
-                dataAdapter.DeleteCommand!.Connection = connection;
+                if (dataAdapter.InsertCommand != null) dataAdapter.InsertCommand.Connection = connection;
+                if (dataAdapter.UpdateCommand != null) dataAdapter.UpdateCommand.Connection = connection;
+                if (dataAdapter.DeleteCommand != null) dataAdapter.DeleteCommand.Connection = connection;
 
                 connection.Open();
                 
@@ -218,10 +263,12 @@ private void btnAdd_Click(object? sender, EventArgs e)
         // --- CRÍTICO: Forçar o foco e a edição na nova linha ---
         
         // 2. Seleciona a primeira linha (onde a nova linha foi inserida)
-        dgvCircuitos.CurrentCell = dgvCircuitos.Rows[0].Cells["Nome"]; // Assumimos que 'Nome' é a primeira célula editável
-        
-        // 3. Força o início do modo de edição
-        dgvCircuitos.BeginEdit(true);
+        if (dgvCircuitos.Rows.Count > 0 && dgvCircuitos.Columns.Contains("Nome"))
+        {
+            dgvCircuitos.CurrentCell = dgvCircuitos.Rows[0].Cells["Nome"]; // Assumimos que 'Nome' é a primeira célula editável
+            // 3. Força o início do modo de edição
+            dgvCircuitos.BeginEdit(true);
+        }
     }
 }
 
@@ -261,6 +308,24 @@ private void btnDelete_Click(object? sender, EventArgs e)
                 
                 // Recarrega os dados (opcional, mas garante que a visualização é atualizada)
                 // LoadCircuitoData(); 
+            }
+            catch (SqlException sqlEx)
+            {
+                // Tratamento específico para erros de constraint de foreign key
+                if (sqlEx.Message.Contains("REFERENCE constraint") || sqlEx.Message.Contains("FK_"))
+                {
+                    MessageBox.Show(
+                        "Cannot delete this circuit because it is being used by one or more Grand Prix races.\n\n" +
+                        "Please remove or reassign the affected Grand Prix races first, then try deleting the circuit again.",
+                        "Circuit In Use",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show($"Database error during deletion: {sqlEx.Message}", "Deletion Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                circuitoTable.RejectChanges(); // Reverte a eliminação se houver erro
             }
             catch (Exception ex)
             {

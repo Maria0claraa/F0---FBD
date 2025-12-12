@@ -46,72 +46,75 @@
             this.pnlOverlay.TabIndex = 9;
 
             this.Label0.AutoSize = true;
-            this.Label0.Font = new System.Drawing.Font("Century Gothic", 30F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.Label0.Font = new System.Drawing.Font("Century Gothic", 36F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.Label0.Location = new System.Drawing.Point(260, 168); 
             this.Label0.Name = "Label0";
             this.Label0.Size = new System.Drawing.Size(219, 59);
             this.Label0.TabIndex = 0;
             this.Label0.Text = "Fórmula";
-            this.Label0.ForeColor = Color.Black; 
+            this.Label0.ForeColor = Color.White; 
             this.Label0.BackColor = Color.Transparent;
             
             // Label1
             this.Label1.AutoSize = true;
-            this.Label1.Font = new System.Drawing.Font("Century Gothic", 30F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.Label1.Font = new System.Drawing.Font("Century Gothic", 36F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.Label1.Location = new System.Drawing.Point(470, 168); 
             this.Label1.Name = "Label1";
             this.Label1.Size = new System.Drawing.Size(53, 59);
             this.Label1.TabIndex = 1;
             this.Label1.Text = "0";
-            this.Label1.ForeColor = System.Drawing.Color.FromArgb(204, 0, 0); 
+            this.Label1.ForeColor = System.Drawing.Color.FromArgb(220, 20, 20); 
             this.Label1.BackColor = Color.Transparent;
             // 
             // Label2
             // 
             this.Label2.AutoSize = true;
-            this.Label2.Font = new System.Drawing.Font("Century Gothic", 10.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.Label2.Location = new System.Drawing.Point(12, 395); // ou 340, experimenta
+            this.Label2.Font = new System.Drawing.Font("Century Gothic", 11F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point);
+            this.Label2.Location = new System.Drawing.Point(12, 395);
             this.Label2.Name = "Label2";
             this.Label2.Size = new System.Drawing.Size(95, 21);
             this.Label2.TabIndex = 2;
             this.Label2.Text = "Loading...";
+            this.Label2.ForeColor = Color.White;
+            this.Label2.BackColor = Color.Transparent;
             // 
             // Label3
             // 
             this.Label3.AutoSize = true;
-            this.Label3.Font = new System.Drawing.Font("Century Gothic", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.Label3.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.Label3.Font = new System.Drawing.Font("Century Gothic", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.Label3.ForeColor = System.Drawing.Color.FromArgb(150, 150, 150);
             this.Label3.Location = new System.Drawing.Point(556, 4);
             this.Label3.Name = "Label3";
             this.Label3.Size = new System.Drawing.Size(170, 21);
             this.Label3.TabIndex = 3;
             this.Label3.Text = "Inês Batista, 124877";
+            this.Label3.BackColor = Color.Transparent;
             // 
             // ImageList4
             // 
             // Label5
             // 
             this.Label5.AutoSize = true;
-            this.Label5.Font = new System.Drawing.Font("Century Gothic", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.Label5.ForeColor = System.Drawing.SystemColors.ButtonShadow;
+            this.Label5.Font = new System.Drawing.Font("Century Gothic", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.Label5.ForeColor = System.Drawing.Color.FromArgb(150, 150, 150);
             this.Label5.Location = new System.Drawing.Point(524, 24);
             this.Label5.Name = "Label5";
             this.Label5.Size = new System.Drawing.Size(203, 21);
             this.Label5.TabIndex = 5;
             this.Label5.Text = "Maria Quinteiro, 124996";
+            this.Label5.BackColor = Color.Transparent;
             //
             // ProgressBar7
             // 
-            this.ProgressBar7.StartColor = Color.DarkRed; 
-            this.ProgressBar7.EndColor = Color.Red;         
-            this.ProgressBar7.ForeColor = System.Drawing.Color.Firebrick;
+            this.ProgressBar7.StartColor = Color.FromArgb(180, 0, 0); 
+            this.ProgressBar7.EndColor = Color.FromArgb(220, 20, 20);         
+            this.ProgressBar7.ForeColor = System.Drawing.Color.FromArgb(220, 20, 20);
             this.ProgressBar7.Location = new System.Drawing.Point(260, 235);
             this.ProgressBar7.Name = "ProgressBar7";
-            this.ProgressBar7.Size = new System.Drawing.Size(220, 15);
+            this.ProgressBar7.Size = new System.Drawing.Size(300, 8);
             this.ProgressBar7.TabIndex = 7;
-            this.ProgressBar7.Value = 50;
-            this.ProgressBar7.BackColor = Color.LightGray; 
-
+            this.ProgressBar7.Value = 0;
+            this.ProgressBar7.BackColor = Color.FromArgb(50, 50, 50);
             // Timer8
             this.Timer8.Interval = 1000;
             

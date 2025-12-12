@@ -47,30 +47,54 @@
                 // Tenta encontrar o recurso que termine em "background.png"
                 string? resourceName = assembly.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("background.png", StringComparison.OrdinalIgnoreCase));
 
+                Image? backgroundImg = null;
+
                 if (!string.IsNullOrEmpty(resourceName))
                 {
                     using (var stream = assembly.GetManifestResourceStream(resourceName))
                     {
                         if (stream != null)
                         {
-                            this.BackgroundImage = Image.FromStream(stream);
-                            this.BackgroundImageLayout = ImageLayout.Stretch;
-                            return;
+                            backgroundImg = Image.FromStream(stream);
                         }
                     }
                 }
 
                 // Fallback: tenta carregar a partir da pasta de execução
-                string fallbackPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.png");
-                if (File.Exists(fallbackPath))
+                if (backgroundImg == null)
                 {
-                    this.BackgroundImage = Image.FromFile(fallbackPath);
-                    this.BackgroundImageLayout = ImageLayout.Stretch;
-                    return;
+                    string fallbackPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.png");
+                    if (File.Exists(fallbackPath))
+                    {
+                        backgroundImg = Image.FromFile(fallbackPath);
+                    }
                 }
 
-                // Se nada funcionar, define uma cor de fundo sólida
-                this.BackColor = Color.LightGray; 
+                if (backgroundImg != null)
+                {
+                    // Criar imagem com 50% de opacidade
+                    Bitmap dimmedImage = new Bitmap(backgroundImg.Width, backgroundImg.Height);
+                    using (Graphics g = Graphics.FromImage(dimmedImage))
+                    {
+                        // Desenha a imagem original
+                        g.DrawImage(backgroundImg, 0, 0);
+                        
+                        // Desenha overlay preto com 50% de opacidade por cima
+                        using (SolidBrush brush = new SolidBrush(Color.FromArgb(128, 0, 0, 0)))
+                        {
+                            g.FillRectangle(brush, 0, 0, dimmedImage.Width, dimmedImage.Height);
+                        }
+                    }
+                    
+                    // Usa o PictureBox pbFundo para o background
+                    pbFundo.Image = dimmedImage;
+                    pbFundo.SendToBack();
+                }
+                else
+                {
+                    // Se nada funcionar, define uma cor de fundo sólida
+                    this.BackColor = Color.FromArgb(20, 20, 20); 
+                }
             }
 
             // -------------------------------------------------------------------------
@@ -79,29 +103,27 @@
 
             private void SetupLayout()
             {
-                // Limpar quaisquer controlos criados anteriormente
-                this.Controls.Clear();
-                
                 // --- 1. Criar e Ancorar o Painel de Menu Principal no Topo ---
                 Panel pnlMainMenu = new Panel
                 {
-                    Size = new Size(this.ClientSize.Width, 60),
+                    Size = new Size(this.ClientSize.Width, 70),
                     Location = new Point(0, 0),
-                    BackColor = Color.FromArgb(150, 0, 0, 0), 
+                    BackColor = Color.FromArgb(200, 15, 15, 15), // Mais opaco para destaque
                     Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                     Name = "pnlMainMenu"
                 };
                 this.Controls.Add(pnlMainMenu);
+                pnlMainMenu.BringToFront();
                 
-                // --- 2. Criação dos Botões do Cabeçalho (Estilo F1) ---
+                // --- 2. Criação dos Botões do Cabeçalho (Estilo F1 Moderno) ---
                 
-                Font menuFont = new Font("Arial", 16, FontStyle.Bold);
-                Color headerColor = Color.FromArgb(102, 0, 0); // Vermelho Escuro/Bordô
+                Font menuFont = new Font("Arial", 14, FontStyle.Bold);
+                Color headerColor = Color.FromArgb(220, 20, 20); // Vermelho F1
                 Color textColor = Color.White;
                 
-                Button btnGrandPrix = CreateMenuHeaderButton("GRAND PRIX", menuFont, headerColor, textColor, new Point(50, 10));
-                Button btnSeasons = CreateMenuHeaderButton("SEASONS", menuFont, headerColor, textColor, new Point(250, 10));
-                Button btnGrid = CreateMenuHeaderButton("GRID", menuFont, headerColor, textColor, new Point(450, 10));
+                Button btnGrandPrix = CreateMenuHeaderButton("GRAND PRIX", menuFont, headerColor, textColor, new Point(30, 15));
+                Button btnSeasons = CreateMenuHeaderButton("SEASONS", menuFont, headerColor, textColor, new Point(230, 15));
+                Button btnGrid = CreateMenuHeaderButton("GRID", menuFont, headerColor, textColor, new Point(430, 15));
 
                 pnlMainMenu.Controls.Add(btnGrandPrix);
                 pnlMainMenu.Controls.Add(btnSeasons);
@@ -110,9 +132,9 @@
                 // --- 3. Criação e Configuração dos Painéis Dropdown ---
                 
                 // Os painéis globais são inicializados no Designer, mas reconfigurados e reposicionados aqui
-                this.pnlGrandPrix = CreateDropdownPanel(new Point(50, 60)); 
-                this.pnlSeasons = CreateDropdownPanel(new Point(250, 60)); 
-                this.pnlGrid = CreateDropdownPanel(new Point(450, 60)); 
+                this.pnlGrandPrix = CreateDropdownPanel(new Point(30, 70)); 
+                this.pnlSeasons = CreateDropdownPanel(new Point(230, 70)); 
+                this.pnlGrid = CreateDropdownPanel(new Point(430, 70)); 
                 
                 // Adicionar Itens e Eventos Toggle... (Resto da lógica de layout)
                 AddDropdownItem(pnlGrandPrix, "GP", 0);
@@ -120,8 +142,7 @@
 
                 AddDropdownItem(pnlSeasons, "Team Standings", 0);
                 AddDropdownItem(pnlSeasons, "Driver Standings", 1);
-                AddDropdownItem(pnlSeasons, "2025 Season", 2);
-                AddDropdownItem(pnlSeasons, "All Seasons", 3);
+                AddDropdownItem(pnlSeasons, "All Seasons", 2);
                 
                 AddDropdownItem(pnlGrid, "Drivers", 0);
                 AddDropdownItem(pnlGrid, "Teams", 1);
@@ -131,6 +152,11 @@
                 this.Controls.Add(pnlGrandPrix);
                 this.Controls.Add(pnlSeasons);
                 this.Controls.Add(pnlGrid);
+
+                // CRÍTICO: Trazer os painéis para frente para ficarem acima do background
+                pnlGrandPrix.BringToFront();
+                pnlSeasons.BringToFront();
+                pnlGrid.BringToFront();
 
                 pnlGrandPrix.Visible = false;
                 pnlSeasons.Visible = false;
@@ -144,10 +170,23 @@
                 // Mensagem de Boas-Vindas e Logout
                 DisplayWelcomeMessage();
                 
-                Button btnLogout = CreateMenuHeaderButton("Logout / Sair", new Font("Arial", 12), Color.Gray, Color.White, new Point(this.ClientSize.Width - 160, this.ClientSize.Height - 50));
-                btnLogout.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+                Button btnLogout = new Button
+                {
+                    Text = "LOGOUT",
+                    Font = new Font("Arial", 11, FontStyle.Bold),
+                    BackColor = Color.FromArgb(150, 150, 150),
+                    ForeColor = Color.White,
+                    Size = new Size(120, 40),
+                    Location = new Point(this.ClientSize.Width - 140, this.ClientSize.Height - 60),
+                    FlatStyle = FlatStyle.Flat,
+                    Cursor = Cursors.Hand,
+                    Anchor = AnchorStyles.Bottom | AnchorStyles.Right
+                };
+                btnLogout.FlatAppearance.BorderSize = 0;
+                btnLogout.FlatAppearance.MouseOverBackColor = Color.FromArgb(180, 180, 180);
                 btnLogout.Click += new EventHandler(this.btnLogout_Click);
                 this.Controls.Add(btnLogout);
+                btnLogout.BringToFront();
             }
 
             // -------------------------------------------------------------------------
@@ -156,16 +195,21 @@
             
             private void DisplayWelcomeMessage()
             {
+                // Mensagem de boas-vindas simples sem painel de fundo
                 Label lblWelcome = new Label
                 {
-                    Text = $"Bem-vindo, {userRole}!",
-                    Font = new Font("Arial", 24, FontStyle.Bold),
-                    AutoSize = true,
-                    Location = new Point(50, 100), 
-                    BackColor = Color.Transparent, 
-                    ForeColor = Color.White 
+                    Text = $"BEM-VINDO, {userRole.ToUpper()}!",
+                    Font = new Font("Arial", 28, FontStyle.Bold),
+                    AutoSize = false,
+                    Size = new Size(500, 60),
+                    Location = new Point(this.ClientSize.Width / 2 - 250, this.ClientSize.Height / 2 - 30),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    BackColor = Color.Transparent,
+                    ForeColor = Color.White
                 };
+
                 this.Controls.Add(lblWelcome);
+                lblWelcome.SendToBack();
             }
 
             private void btnLogout_Click(object? sender, EventArgs e)
@@ -186,9 +230,12 @@
                     Size = new Size(180, 40),
                     Location = location,
                     FlatStyle = FlatStyle.Flat,
-                    FlatAppearance = { BorderSize = 0, MouseDownBackColor = Color.FromArgb(130, 0, 0), MouseOverBackColor = Color.FromArgb(115, 0, 0) }, 
+                    Cursor = Cursors.Hand,
                     TextAlign = ContentAlignment.MiddleCenter
                 };
+                btn.FlatAppearance.BorderSize = 0;
+                btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(180, 10, 10);
+                btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 30, 30);
                 return btn;
             }
 
@@ -198,16 +245,20 @@
                 {
                     Size = new Size(180, 200),
                     Location = location,
-                    BackColor = Color.White, 
-                    BorderStyle = BorderStyle.None, 
+                    BackColor = Color.FromArgb(240, 240, 240),
+                    BorderStyle = BorderStyle.None,
                     AutoScroll = true
                 };
                 
                 panel.Paint += (sender, e) => {
-                    ControlPaint.DrawBorder(e.Graphics, panel.ClientRectangle, Color.Silver, ButtonBorderStyle.Solid);
+                    // Borda mais elegante
+                    using (Pen pen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                    {
+                        e.Graphics.DrawRectangle(pen, 0, 0, panel.Width - 1, panel.Height - 1);
+                    }
                 };
                 
-                panel.BringToFront(); 
+                panel.BringToFront();
                 return panel;
             }
 

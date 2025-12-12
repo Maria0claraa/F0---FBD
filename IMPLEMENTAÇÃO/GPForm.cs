@@ -426,9 +426,20 @@ namespace ProjetoFBD
                 return;
             }
             
-            // Alternativa temporária:
-            MessageBox.Show($"Would manage sessions for: {selectedGP}\n(SessionForm not implemented yet)", 
-                "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            // Abrir o SessionForm para gerenciar sessões deste GP
+            try
+            {
+                SessionForm sessionForm = new SessionForm(this.userRole, selectedGP);
+                sessionForm.ShowDialog();
+                
+                // Atualizar a lista de GPs após fechar o form de sessões (caso tenha mudanças)
+                LoadGPData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening session management: {ex.Message}", 
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         // -------------------------------------------------------------------------

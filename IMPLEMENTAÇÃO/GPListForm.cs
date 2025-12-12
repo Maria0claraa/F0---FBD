@@ -16,6 +16,7 @@ namespace ProjetoFBD
         public GPListForm(string role, int year)
         {
             InitializeComponent();
+            
             this.userRole = role;
             this.selectedYear = year;
             
@@ -111,45 +112,23 @@ namespace ProjetoFBD
 
         private void LoadGPData()
 {
-    string connectionString = DbConfig.ConnectionString;
+    try
+    {
+        string connectionString = DbConfig.ConnectionString;
+        
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            MessageBox.Show("Connection string is not configured.", "Configuration Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
     
-    // Lista de queries possíveis com diferentes combinações de nomes de colunas
+    // Consulta simplificada: mostrar apenas o nome do GP para o ano selecionado
     string[] queries = new string[]
     {
-        // Tentativa 1: Nomes como você os forneceu
         @"
         SELECT 
-            gp.NomeGP as [Grand Prix Name],
-            c.Nome as [Circuit],
-            gp.Ano_Temporada as [Season Year]
-        FROM Grande_Prémio gp
-        INNER JOIN Circuito c ON gp.ID_Circuito = c.ID
-        WHERE gp.Ano_Temporada = @Year
-        ORDER BY gp.DataCorrida ASC",
-        
-        // Tentativa 2: Nomes alternativos (sem acentos, etc.)
-        @"
-        SELECT 
-            gp.NomeGP as GP_Name,
-            c.Nome as Circuit_Name,
-            gp.Ano_Temporada as Season_Year
-        FROM Grande_Prémio gp
-        INNER JOIN Circuito c ON gp.ID_Circuito = c.ID
-        WHERE gp.Ano_Temporada = @Year
-        ORDER BY gp.DataCorrida ASC",
-        
-        // Tentativa 3: Sem JOIN primeiro
-        @"
-        SELECT 
-            NomeGP as GP_Name,
-            Ano_Temporada as Season_Year
-        FROM Grande_Prémio
-        WHERE Ano_Temporada = @Year
-        ORDER BY DataCorrida ASC",
-        
-        // Tentativa 4: Usando * para ver todas as colunas
-        @"
-        SELECT TOP 10 *
+            NomeGP AS [Grand Prix Name]
         FROM Grande_Prémio
         WHERE Ano_Temporada = @Year
         ORDER BY DataCorrida ASC"
@@ -177,7 +156,7 @@ namespace ProjetoFBD
                 success = true;
                 Console.WriteLine($"✓ Query {i + 1} bem sucedida! {gpTable.Rows.Count} registros encontrados.");
                 
-                // Mostrar colunas retornadas
+                // Mostrar colunas retornadas (apenas log)
                 Console.WriteLine("Colunas retornadas:");
                 foreach (DataColumn column in gpTable.Columns)
                 {
@@ -209,55 +188,27 @@ namespace ProjetoFBD
         errorMsg += "3. Permissões de acesso\n\n";
         errorMsg += "Clique em OK para ver a estrutura das tabelas.";
         
+        MessageBox.Show(errorMsg, "Error Loading Data", MessageBoxButtons.OK, MessageBoxIcon.Error);
         return;
     }
     
     // Configurar o DataGridView
     if (dgvGPs != null)
     {
+        dgvGPs.AutoGenerateColumns = true;
         dgvGPs.DataSource = gpTable;
         
-        // Renomear cabeçalhos para ficarem bonitos
+        // Manter apenas a coluna de nome e ajustar cabeçalho
         foreach (DataGridViewColumn column in dgvGPs.Columns)
         {
-            switch (column.Name)
+            if (column.Name == "Grand Prix Name" || column.Name == "GP_Name" || column.Name == "NomeGP")
             {
-                case "GP_Name":
-                case "NomeGP":
-                    column.HeaderText = "Grand Prix Name";
-                    column.Width = 200;
-                    break;
-                    
-                case "Circuit_Name":
-                case "Nome":
-                    column.HeaderText = "Circuit";
-                    column.Width = 150;
-                    break;
-                    
-                case "Race_Date":
-                case "DataCorrida":
-                    column.HeaderText = "Race Date";
-                    column.DefaultCellStyle.Format = "dd/MM/yyyy";
-                    column.Width = 100;
-                    break;
-                    
-                case "Season_Year":
-                case "Ano_Temporada":
-                    column.HeaderText = "Season";
-                    column.Visible = false; // Esconder pois já sabemos o ano
-                    break;
-                    
-                case "ID_Circuito":
-                    column.Visible = false; // Esconder ID do circuito
-                    break;
-                    
-                default:
-                    // Para outras colunas que possam aparecer
-                    if (column.Name.Contains("ID") || column.Name.ToLower().Contains("id"))
-                    {
-                        column.Visible = false;
-                    }
-                    break;
+                column.HeaderText = "Grand Prix Name";
+                column.Width = 400;
+            }
+            else
+            {
+                column.Visible = false;
             }
         }
     }
@@ -289,6 +240,12 @@ namespace ProjetoFBD
     {
         MessageBox.Show($"No Grand Prix events found for {selectedYear}.", 
             "No Data", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show($"Error loading GP data: {ex.Message}\n\nStack Trace: {ex.StackTrace}", 
+            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 }
 
@@ -401,129 +358,19 @@ namespace ProjetoFBD
         }
 
         private void ShowGPDetails(string gpName, string circuitName, string raceDate, int seasonYear)
-{
-    try
-    {
-        // Criar um formulário de detalhes mais completo
-        Form detailsForm = new Form
         {
-            Text = $"GP Details: {gpName} ({seasonYear})",
-            Size = new Size(600, 400),
-            StartPosition = FormStartPosition.CenterParent,
-            FormBorderStyle = FormBorderStyle.FixedDialog,
-            MaximizeBox = false,
-            MinimizeBox = false
-        };
-        
-        // Painel principal
-        Panel mainPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(20)
-        };
-        
-        // Informações do GP
-        Label lblGPInfo = new Label
-        {
-            Text = $"Grand Prix: {gpName}\n" +
-                   $"Circuit: {circuitName}\n" +
-                   $"Date: {raceDate}\n" +
-                   $"Season: {seasonYear}",
-            Location = new Point(20, 20),
-            Size = new Size(500, 100),
-            Font = new Font("Arial", 11)
-        };
-        
-        // Se quiser buscar mais informações do banco de dados baseado no nome, data e ano
-        string additionalInfo = GetGPAdditionalInfo(gpName, raceDate, seasonYear);
-        
-        Label lblAdditionalInfo = new Label
-        {
-            Text = additionalInfo,
-            Location = new Point(20, 130),
-            Size = new Size(500, 100),
-            Font = new Font("Arial", 10)
-        };
-        
-        // Label informativa sobre sessões
-        Label lblSessionsInfo = new Label
-        {
-            Text = "Weekend Sessions:\n\n" +
-                   "• Free Practice 1\n" +
-                   "• Free Practice 2\n" +
-                   "• Free Practice 3 (if applicable)\n" +
-                   "• Qualifying\n" +
-                   "• Race\n\n" +
-                   "(Each session would have its own results table)",
-            Location = new Point(20, 240),
-            Size = new Size(500, 150),
-            Font = new Font("Arial", 10)
-        };
-        
-        // Botão para fechar
-        Button btnCloseDetails = new Button
-        {
-            Text = "Close",
-            Location = new Point(450, 320),
-            Size = new Size(100, 30),
-            DialogResult = DialogResult.OK
-        };
-        btnCloseDetails.Click += (s, e) => detailsForm.Close();
-        
-        mainPanel.Controls.Add(lblGPInfo);
-        if (!string.IsNullOrEmpty(additionalInfo))
-            mainPanel.Controls.Add(lblAdditionalInfo);
-        mainPanel.Controls.Add(lblSessionsInfo);
-        mainPanel.Controls.Add(btnCloseDetails);
-        
-        detailsForm.Controls.Add(mainPanel);
-        detailsForm.AcceptButton = btnCloseDetails;
-        detailsForm.ShowDialog();
-    }
-    catch (Exception ex)
-    {
-        MessageBox.Show($"Could not show GP details: {ex.Message}", 
-            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-    }
-}
-
-private string GetGPAdditionalInfo(string gpName, string raceDate, int seasonYear)
-{
-    // Método opcional para buscar informações adicionais do banco de dados
-    try
-    {
-        string connectionString = DbConfig.ConnectionString;
-        string query = @"
-            SELECT 
-                COUNT(*) as SessionCount
-            FROM Grande_Prémio gp
-            WHERE gp.NomeGP = @GPName 
-                AND gp.Ano_Temporada = @Year
-                AND CONVERT(DATE, gp.DataCorrida) = CONVERT(DATE, @RaceDate)";
-        
-        using (SqlConnection connection = new SqlConnection(connectionString))
-        {
-            SqlCommand command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@GPName", gpName);
-            command.Parameters.AddWithValue("@Year", seasonYear);
-            command.Parameters.AddWithValue("@RaceDate", DateTime.Parse(raceDate));
-            
-            connection.Open();
-            var result = command.ExecuteScalar();
-            
-            if (result != null && result != DBNull.Value)
+            try
             {
-                return $"Found in database: Yes\nAssociated sessions could be shown here";
+                // Abrir o SessionForm para mostrar as sessões deste GP
+                SessionForm sessionForm = new SessionForm(this.userRole, gpName);
+                sessionForm.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not show GP details: {ex.Message}", 
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-    }
-    catch
-    {
-        // Ignorar erros - é apenas informação adicional
-    }
-    
-    return string.Empty;
-}
 
         // Método para atualizar a lista
         public void RefreshGPList()
