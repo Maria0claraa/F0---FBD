@@ -1080,6 +1080,8 @@ namespace ProjetoFBD
 
         private void LoadPitstops(string? driverFilter = null, string? teamFilter = null)
         {
+            if (dgvPitstops == null) return;
+            
             try
             {
                 using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
@@ -1132,8 +1134,6 @@ namespace ProjetoFBD
                     SqlDataAdapter adapter = new SqlDataAdapter(cmd);
                     pitstopTable = new DataTable();
                     adapter.Fill(pitstopTable);
-
-                    if (dgvPitstops == null) return;
                     
                     dgvPitstops.DataSource = pitstopTable;
 
@@ -1689,6 +1689,8 @@ namespace ProjetoFBD
 
         private void LoadPenalties(string? driverFilter = null, string? teamFilter = null)
         {
+            if (dgvPenalties == null) return;
+            
             try
             {
                 using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
@@ -1738,8 +1740,6 @@ namespace ProjetoFBD
                     SqlDataAdapter adapter = new SqlDataAdapter(cmd);
                     penaltyTable = new DataTable();
                     adapter.Fill(penaltyTable);
-
-                    if (dgvPenalties == null) return;
                     
                     dgvPenalties.DataSource = penaltyTable;
 

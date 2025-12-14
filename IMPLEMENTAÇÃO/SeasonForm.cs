@@ -54,7 +54,7 @@ namespace ProjetoFBD
             pnlStaffActions = new Panel
             {
                 Location = new Point(10, 500),
-                Size = new Size(700, 50),
+                Size = new Size(850, 50),
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left
             };
             this.Controls.Add(pnlStaffActions);
@@ -66,6 +66,7 @@ namespace ProjetoFBD
             Button btnDelete = CreateActionButton("Delete Selected", new Point(280, 5));
             Button btnRefresh = CreateActionButton("Refresh", new Point(420, 5));
             Button btnViewGPs = CreateActionButton("View Season GPs", new Point(560, 5));
+            Button btnViewStandings = CreateActionButton("View Standings", new Point(710, 5), Color.FromArgb(0, 102, 204));
 
             // --- Ligar Eventos ---
             btnSave.Click += btnSave_Click;
@@ -73,12 +74,14 @@ namespace ProjetoFBD
             btnDelete.Click += btnDelete_Click;
             btnRefresh.Click += btnRefresh_Click;
             btnViewGPs.Click += btnViewGPs_Click;
+            btnViewStandings.Click += btnViewStandings_Click;
             
             pnlStaffActions.Controls.Add(btnSave);
             pnlStaffActions.Controls.Add(btnAdd);
             pnlStaffActions.Controls.Add(btnDelete);
             pnlStaffActions.Controls.Add(btnRefresh);
             pnlStaffActions.Controls.Add(btnViewGPs);
+            pnlStaffActions.Controls.Add(btnViewStandings);
 
             // --- 4. Role-Based Access Control (RBAC) ---
             if (this.userRole == "Staff")
@@ -106,14 +109,14 @@ namespace ProjetoFBD
             }
         }
         
-        private Button CreateActionButton(string text, Point location)
+        private Button CreateActionButton(string text, Point location, Color? backColor = null)
         {
             Button btn = new Button 
             { 
                 Text = text, 
                 Location = location, 
                 Size = new Size(130, 40), 
-                BackColor = Color.FromArgb(204, 0, 0),
+                BackColor = backColor ?? Color.FromArgb(204, 0, 0),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 FlatAppearance = { BorderSize = 0 }
@@ -133,11 +136,7 @@ namespace ProjetoFBD
             string query = @"
                 SELECT 
                     t.Ano,
-                    ISNULL(gp.GPCount, 0) as NumCorridas, -- Calculado automaticamente
-                    t.PontosPiloto,
-                    t.PontosEquipa,
-                    t.PosiçãoPiloto,
-                    t.PosiçãoEquipa
+                    ISNULL(gp.GPCount, 0) as NumCorridas
                 FROM Temporada t
                 LEFT JOIN (
                     SELECT Ano_Temporada, COUNT(*) as GPCount
@@ -163,61 +162,20 @@ namespace ProjetoFBD
                 
                 dgvSeasons.DataSource = seasonTable;
 
-                // --- Configurações de Coluna COM VERIFICAÇÃO DE NULOS ---
-                if (seasonTable != null && seasonTable.Columns.Contains("PosiçãoPiloto"))
-                {
-                    var column = seasonTable.Columns["PosiçãoPiloto"];
-                    if (column != null)
-                    {
-                        column.AllowDBNull = true;
-                    }
-                }
-                
-                if (seasonTable != null && seasonTable.Columns.Contains("PosiçãoEquipa"))
-                {
-                    var column = seasonTable.Columns["PosiçãoEquipa"];
-                    if (column != null)
-                    {
-                        column.AllowDBNull = true;
-                    }
-                }
-                
                 // Configurar cabeçalhos
                 if (dgvSeasons != null)
                 {
                     if (dgvSeasons.Columns.Contains("Ano"))
+                    {
                         dgvSeasons.Columns["Ano"]!.HeaderText = "Year";
+                        dgvSeasons.Columns["Ano"]!.ReadOnly = true;
+                    }
                     if (dgvSeasons.Columns.Contains("NumCorridas"))
                     {
                         dgvSeasons.Columns["NumCorridas"]!.HeaderText = "Races Count (Auto)";
-                        dgvSeasons.Columns["NumCorridas"]!.ReadOnly = true; // Tornar somente leitura
-
-                    }
-                    if (dgvSeasons.Columns.Contains("PontosPiloto"))
-                        dgvSeasons.Columns["PontosPiloto"]!.HeaderText = "Driver Points";
-                    if (dgvSeasons.Columns.Contains("PontosEquipa"))
-                        dgvSeasons.Columns["PontosEquipa"]!.HeaderText = "Team Points";
-                    if (dgvSeasons.Columns.Contains("PosiçãoPiloto"))
-                        dgvSeasons.Columns["PosiçãoPiloto"]!.HeaderText = "Driver Position";
-                    if (dgvSeasons.Columns.Contains("PosiçãoEquipa"))
-                        dgvSeasons.Columns["PosiçãoEquipa"]!.HeaderText = "Team Position";
-                    
-                    // Tornar a coluna Ano somente leitura
-                    if (dgvSeasons.Columns.Contains("Ano"))
-                    {
-                        dgvSeasons.Columns["Ano"]!.ReadOnly = true;
-                    }
-                    
-                    // Configurar formatação para colunas numéricas
-                    foreach (DataGridViewColumn column in dgvSeasons.Columns)
-                    {
-                        if (column.Name == "NumCorridas" || column.Name == "PontosPiloto" || 
-                            column.Name == "PontosEquipa" || column.Name == "PosiçãoPiloto" || 
-                            column.Name == "PosiçãoEquipa")
-                        {
-                            column.DefaultCellStyle.Format = "N0";
-                            column.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-                        }
+                        dgvSeasons.Columns["NumCorridas"]!.ReadOnly = true;
+                        dgvSeasons.Columns["NumCorridas"]!.DefaultCellStyle.Format = "N0";
+                        dgvSeasons.Columns["NumCorridas"]!.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
                     }
                     
                     // Adicionar validação de célula
@@ -505,6 +463,40 @@ namespace ProjetoFBD
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private void btnViewStandings_Click(object? sender, EventArgs e)
+        {
+            if (dgvSeasons == null || dgvSeasons.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a season first.", "No Selection", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            
+            DataGridViewRow selectedRow = dgvSeasons.SelectedRows[0];
+            
+            var anoCell = selectedRow.Cells["Ano"];
+            if (anoCell != null && anoCell.Value != null)
+            {
+                if (int.TryParse(anoCell.Value.ToString(), out int selectedYear))
+                {
+                    using (var standingsDialog = new StandingsViewerDialog(selectedYear))
+                    {
+                        standingsDialog.ShowDialog();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Invalid year format.", "Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Could not retrieve the selected year.", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
         
         private void DgvSeasons_CellValidating(object? sender, DataGridViewCellValidatingEventArgs e)
         {
@@ -667,6 +659,229 @@ namespace ProjetoFBD
                 
                 this.AcceptButton = okButton;
                 this.CancelButton = cancelButton;
+            }
+        }
+    }
+
+    // ============================================================================
+    // STANDINGS VIEWER DIALOG
+    // ============================================================================
+    public class StandingsViewerDialog : Form
+    {
+        private TabControl? tabControl;
+        private DataGridView? dgvDriverStandings;
+        private DataGridView? dgvTeamStandings;
+        private int year;
+
+        public StandingsViewerDialog(int year)
+        {
+            this.year = year;
+            
+            this.Text = $"Standings - {year} Season";
+            this.Size = new Size(1000, 600);
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            SetupUI();
+            LoadStandings();
+        }
+
+        private void SetupUI()
+        {
+            Label lblTitle = new Label
+            {
+                Text = $"{year} Season Standings",
+                Location = new Point(20, 20),
+                Size = new Size(400, 30),
+                Font = new Font("Arial", 16, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 20, 20)
+            };
+            this.Controls.Add(lblTitle);
+
+            tabControl = new TabControl
+            {
+                Location = new Point(20, 60),
+                Size = new Size(940, 450),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            };
+
+            // Driver Standings Tab
+            TabPage driverTab = new TabPage("Driver Standings");
+            dgvDriverStandings = new DataGridView
+            {
+                Location = new Point(10, 10),
+                Size = new Size(910, 400),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                AllowUserToAddRows = false,
+                ReadOnly = true,
+                AutoGenerateColumns = true,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                RowHeadersVisible = false
+            };
+            driverTab.Controls.Add(dgvDriverStandings);
+            tabControl.TabPages.Add(driverTab);
+
+            // Team Standings Tab
+            TabPage teamTab = new TabPage("Team Standings");
+            dgvTeamStandings = new DataGridView
+            {
+                Location = new Point(10, 10),
+                Size = new Size(910, 400),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                AllowUserToAddRows = false,
+                ReadOnly = true,
+                AutoGenerateColumns = true,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                RowHeadersVisible = false
+            };
+            teamTab.Controls.Add(dgvTeamStandings);
+            tabControl.TabPages.Add(teamTab);
+
+            this.Controls.Add(tabControl);
+
+            Button btnClose = new Button
+            {
+                Text = "Close",
+                Location = new Point(860, 520),
+                Size = new Size(100, 35),
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                BackColor = Color.Gray,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DialogResult = DialogResult.OK
+            };
+            btnClose.FlatAppearance.BorderSize = 0;
+            this.Controls.Add(btnClose);
+        }
+
+        private void LoadStandings()
+        {
+            LoadDriverStandings();
+            LoadTeamStandings();
+        }
+
+        private void LoadDriverStandings()
+        {
+            if (dgvDriverStandings == null) return;
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    conn.Open();
+                    string query = @"
+                        WITH DriverPoints AS (
+                            SELECT 
+                                r.ID_Piloto,
+                                SUM(r.Pontos) AS TotalPoints,
+                                COUNT(CASE WHEN r.PosiçãoFinal = 1 THEN 1 END) AS Wins,
+                                COUNT(CASE WHEN r.PosiçãoFinal <= 3 THEN 1 END) AS Podiums
+                            FROM Resultados r
+                            WHERE r.NomeSessão = 'Race' 
+                              AND EXISTS (SELECT 1 FROM Grande_Prémio gp WHERE gp.Nome = r.NomeGP AND gp.Ano_Temporada = @Year)
+                            GROUP BY r.ID_Piloto
+                        )
+                        SELECT 
+                            ROW_NUMBER() OVER (ORDER BY dp.TotalPoints DESC) AS Position,
+                            COALESCE(m.Nome, 'Unknown Driver') AS Driver,
+                            COALESCE(eq.Nome, 'Unknown Team') AS Team,
+                            dp.TotalPoints,
+                            dp.Wins,
+                            dp.Podiums
+                        FROM DriverPoints dp
+                        INNER JOIN Piloto p ON dp.ID_Piloto = p.ID_Piloto
+                        LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                        LEFT JOIN Equipa eq ON p.ID_Equipa = eq.ID_Equipa
+                        ORDER BY dp.TotalPoints DESC";
+                    
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@Year", year);
+                    
+                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                    DataTable table = new DataTable();
+                    adapter.Fill(table);
+                    
+                    dgvDriverStandings.DataSource = table;
+                    
+                    dgvDriverStandings.Refresh();
+                    Application.DoEvents();
+
+                    if (dgvDriverStandings.Columns.Contains("Position") && dgvDriverStandings.Columns["Position"] != null)
+                        dgvDriverStandings.Columns["Position"]!.Width = 60;
+                    if (dgvDriverStandings.Columns.Contains("TotalPoints") && dgvDriverStandings.Columns["TotalPoints"] != null)
+                        dgvDriverStandings.Columns["TotalPoints"]!.HeaderText = "Points";
+                    if (dgvDriverStandings.Columns.Contains("Wins") && dgvDriverStandings.Columns["Wins"] != null)
+                        dgvDriverStandings.Columns["Wins"]!.Width = 60;
+                    if (dgvDriverStandings.Columns.Contains("Podiums") && dgvDriverStandings.Columns["Podiums"] != null)
+                        dgvDriverStandings.Columns["Podiums"]!.Width = 80;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading driver standings: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadTeamStandings()
+        {
+            if (dgvTeamStandings == null) return;
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+                {
+                    conn.Open();
+                    string query = @"
+                        WITH TeamPoints AS (
+                            SELECT 
+                                p.ID_Equipa,
+                                SUM(r.Pontos) AS TotalPoints,
+                                COUNT(CASE WHEN r.PosiçãoFinal = 1 THEN 1 END) AS Wins,
+                                COUNT(CASE WHEN r.PosiçãoFinal <= 3 THEN 1 END) AS Podiums
+                            FROM Resultados r
+                            INNER JOIN Piloto p ON r.ID_Piloto = p.ID_Piloto
+                            WHERE r.NomeSessão = 'Race'
+                              AND EXISTS (SELECT 1 FROM Grande_Prémio gp WHERE gp.Nome = r.NomeGP AND gp.Ano_Temporada = @Year)
+                            GROUP BY p.ID_Equipa
+                        )
+                        SELECT 
+                            ROW_NUMBER() OVER (ORDER BY tp.TotalPoints DESC) AS Position,
+                            eq.Nome AS Team,
+                            tp.TotalPoints,
+                            tp.Wins,
+                            tp.Podiums
+                        FROM TeamPoints tp
+                        INNER JOIN Equipa eq ON tp.ID_Equipa = eq.ID_Equipa
+                        ORDER BY tp.TotalPoints DESC";
+                    
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@Year", year);
+                    
+                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                    DataTable table = new DataTable();
+                    adapter.Fill(table);
+                    
+                    dgvTeamStandings.DataSource = table;
+                    
+                    dgvTeamStandings.Refresh();
+                    Application.DoEvents();
+
+                    if (dgvTeamStandings.Columns.Contains("Position") && dgvTeamStandings.Columns["Position"] != null)
+                        dgvTeamStandings.Columns["Position"]!.Width = 60;
+                    if (dgvTeamStandings.Columns.Contains("TotalPoints") && dgvTeamStandings.Columns["TotalPoints"] != null)
+                        dgvTeamStandings.Columns["TotalPoints"]!.HeaderText = "Points";
+                    if (dgvTeamStandings.Columns.Contains("Wins") && dgvTeamStandings.Columns["Wins"] != null)
+                        dgvTeamStandings.Columns["Wins"]!.Width = 60;
+                    if (dgvTeamStandings.Columns.Contains("Podiums") && dgvTeamStandings.Columns["Podiums"] != null)
+                        dgvTeamStandings.Columns["Podiums"]!.Width = 80;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading team standings: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
