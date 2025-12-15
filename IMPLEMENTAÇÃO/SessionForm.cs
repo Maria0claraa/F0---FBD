@@ -103,10 +103,15 @@ namespace ProjetoFBD
             }
             else
             {
+                // Guest pode ver mas não pode editar
                 dgvSessions.ReadOnly = true;
+                pnlStaffActions.Visible = true;
+                // Esconder botões de edição
                 btnSave.Visible = false;
                 btnAdd.Visible = false;
                 btnDelete.Visible = false;
+                btnAddPenalty.Visible = false;
+                // Guest pode ver resultados, penalties e pitstops mas não pode adicionar
             }
         }
 
@@ -408,7 +413,7 @@ namespace ProjetoFBD
 
             if (!string.IsNullOrEmpty(sessionName))
             {
-                PitstopViewerDialog pitstopDialog = new PitstopViewerDialog(sessionName, gpName);
+                PitstopViewerDialog pitstopDialog = new PitstopViewerDialog(sessionName, gpName, this.userRole);
                 pitstopDialog.ShowDialog();
             }
             else
@@ -889,11 +894,13 @@ namespace ProjetoFBD
         private DataTable? pitstopTable;
         private string sessionName;
         private string gpName;
+        private string userRole;
 
-        public PitstopViewerDialog(string sessionName, string gpName)
+        public PitstopViewerDialog(string sessionName, string gpName, string userRole)
         {
             this.sessionName = sessionName;
             this.gpName = gpName;
+            this.userRole = userRole;
 
             this.Text = $"Pitstops - {sessionName}";
             this.Size = new Size(1200, 600);
@@ -995,7 +1002,8 @@ namespace ProjetoFBD
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
                 BackColor = Color.FromArgb(220, 20, 20),
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                FlatStyle = FlatStyle.Flat,
+                Visible = (this.userRole == "Staff") // Apenas visível para Staff
             };
             btnAddPitstop.FlatAppearance.BorderSize = 0;
             btnAddPitstop.Click += BtnAddPitstop_Click;

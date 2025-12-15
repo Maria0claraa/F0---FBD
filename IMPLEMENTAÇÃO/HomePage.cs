@@ -161,13 +161,30 @@
                     Font = new Font("Arial", 14, FontStyle.Bold),
                     ForeColor = Color.White,
                     AutoSize = false,
-                    Size = new Size(this.ClientSize.Width - 300, 35),
+                    Size = new Size(this.ClientSize.Width - 450, 35),
                     Location = new Point(150, 7),
                     TextAlign = ContentAlignment.MiddleLeft,
                     BackColor = Color.Transparent,
                     Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
                 };
                 pnlTopBar.Controls.Add(lblCurrentView);
+                
+                Button btnHome = new Button
+                {
+                    Text = "🏠 HOME",
+                    Font = new Font("Arial", 12, FontStyle.Bold),
+                    BackColor = Color.FromArgb(0, 102, 204),
+                    ForeColor = Color.White,
+                    Size = new Size(120, 35),
+                    Location = new Point(this.ClientSize.Width - 155, 7),
+                    FlatStyle = FlatStyle.Flat,
+                    Cursor = Cursors.Hand,
+                    Anchor = AnchorStyles.Top | AnchorStyles.Right
+                };
+                btnHome.FlatAppearance.BorderSize = 0;
+                btnHome.FlatAppearance.MouseOverBackColor = Color.FromArgb(0, 122, 224);
+                btnHome.Click += BtnHome_Click;
+                pnlTopBar.Controls.Add(btnHome);
                 
                 // --- 1.6 Create Content Panel (Full Screen Below Navigation) ---
                 pnlContent = new Panel
@@ -206,9 +223,7 @@
                 AddDropdownItem(pnlGrandPrix, "GP", 0);
                 AddDropdownItem(pnlGrandPrix, "Circuits", 1);
 
-                AddDropdownItem(pnlSeasons, "Team Standings", 0);
-                AddDropdownItem(pnlSeasons, "Driver Standings", 1);
-                AddDropdownItem(pnlSeasons, "All Seasons", 2);
+                AddDropdownItem(pnlSeasons, "All Seasons", 0);
                 
                 AddDropdownItem(pnlGrid, "Drivers", 0);
                 AddDropdownItem(pnlGrid, "Teams", 1);
@@ -409,14 +424,6 @@
     {
         btnItem.Click += (s, e) => OpenCircuitForm(); 
     }
-    else if (parentPanel == pnlSeasons && text == "Team Standings")
-    {
-        btnItem.Click += (s, e) => OpenTeamStandingsForm();
-    }
-    else if (parentPanel == pnlSeasons && text == "Driver Standings")
-    {
-        btnItem.Click += (s, e) => OpenDriverStandingsForm();
-    }
     else if (parentPanel == pnlSeasons && text == "All Seasons")
     {
         btnItem.Click += (s, e) => OpenSeasonForm();
@@ -472,20 +479,6 @@
         pnlSeasons.Visible = false;
         SeasonForm seasonForm = new SeasonForm(this.userRole);
         LoadFormIntoContent(seasonForm, "SEASONS");
-    }
-    
-    private void OpenTeamStandingsForm()
-    {
-        pnlSeasons.Visible = false;
-        TeamStandingsForm standingsForm = new TeamStandingsForm(this.userRole);
-        LoadFormIntoContent(standingsForm, "TEAM STANDINGS");
-    }
-    
-    private void OpenDriverStandingsForm()
-    {
-        pnlSeasons.Visible = false;
-        DriverStandingsForm standingsForm = new DriverStandingsForm(this.userRole);
-        LoadFormIntoContent(standingsForm, "DRIVER STANDINGS");
     }
     
     private void OpenDriverForm()
@@ -575,10 +568,6 @@
                 lblCurrentView.Text = "CIRCUITS";
             else if (previousControl is SeasonForm)
                 lblCurrentView.Text = "SEASONS";
-            else if (previousControl is TeamStandingsForm)
-                lblCurrentView.Text = "TEAM STANDINGS";
-            else if (previousControl is DriverStandingsForm)
-                lblCurrentView.Text = "DRIVER STANDINGS";
             else if (previousControl is DriverForm)
                 lblCurrentView.Text = "DRIVERS";
             else if (previousControl is TeamForm)
@@ -593,7 +582,31 @@
             // No more history - go back to home
             pnlContent.Controls.Clear();
             pnlTopBar.Visible = false;
+            DisplayWelcomeMessage();
         }
+    }
+    
+    private void BtnHome_Click(object? sender, EventArgs e)
+    {
+        // Clear navigation stack and return to home
+        while (navigationStack.Count > 0)
+        {
+            navigationStack.Pop();
+        }
+        
+        // Clear current content
+        if (pnlContent.Controls.Count > 0)
+        {
+            Control currentControl = pnlContent.Controls[0];
+            if (currentControl is Form currentForm)
+            {
+                currentForm.Close();
+            }
+            pnlContent.Controls.Clear();
+        }
+        
+        pnlTopBar.Visible = false;
+        DisplayWelcomeMessage();
     }
     
     // Public methods for NavigationHelper to call

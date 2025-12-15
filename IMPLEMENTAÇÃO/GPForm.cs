@@ -93,9 +93,10 @@ namespace ProjetoFBD
                 pnlStaffActions.Visible = (this.userRole == "Staff");
             }
             
+            // Manage Sessions deve estar visível para todos os utilizadores
             if (pnlAdditionalActions != null)
             {
-                pnlAdditionalActions.Visible = (this.userRole == "Staff");
+                pnlAdditionalActions.Visible = true;
             }
         }
 
@@ -432,10 +433,7 @@ namespace ProjetoFBD
             try
             {
                 SessionForm sessionForm = new SessionForm(this.userRole, selectedGP);
-                sessionForm.ShowDialog();
-                
-                // Atualizar a lista de GPs após fechar o form de sessões (caso tenha mudanças)
-                LoadGPData();
+                NavigationHelper.NavigateTo(sessionForm, "SESSIONS - " + selectedGP);
             }
             catch (Exception ex)
             {

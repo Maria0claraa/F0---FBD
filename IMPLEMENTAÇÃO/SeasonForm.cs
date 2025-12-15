@@ -94,17 +94,22 @@ namespace ProjetoFBD
                 dgvSeasons.ReadOnly = true; 
                 pnlStaffActions.Visible = false;
                 
-                // Criar um painel separado apenas para o botão de visualização
+                // Criar um painel separado para os botões de visualização (Guest)
                 Panel viewOnlyPanel = new Panel
                 {
                     Location = new Point(10, 500),
-                    Size = new Size(150, 50),
+                    Size = new Size(300, 50),
                     Anchor = AnchorStyles.Bottom | AnchorStyles.Left
                 };
                 
-                Button viewOnlyBtn = CreateActionButton("View Season GPs", new Point(0, 5));
-                viewOnlyBtn.Click += btnViewGPs_Click;
-                viewOnlyPanel.Controls.Add(viewOnlyBtn);
+                Button viewGPsBtn = CreateActionButton("View Season GPs", new Point(0, 5));
+                viewGPsBtn.Click += btnViewGPs_Click;
+                viewOnlyPanel.Controls.Add(viewGPsBtn);
+                
+                Button viewStandingsBtn = CreateActionButton("View Standings", new Point(150, 5), Color.FromArgb(0, 102, 204));
+                viewStandingsBtn.Click += btnViewStandings_Click;
+                viewOnlyPanel.Controls.Add(viewStandingsBtn);
+                
                 this.Controls.Add(viewOnlyPanel);
             }
         }
@@ -771,29 +776,22 @@ namespace ProjetoFBD
                 {
                     conn.Open();
                     string query = @"
-                        WITH DriverPoints AS (
-                            SELECT 
-                                r.ID_Piloto,
-                                SUM(r.Pontos) AS TotalPoints,
-                                COUNT(CASE WHEN r.PosiçãoFinal = 1 THEN 1 END) AS Wins,
-                                COUNT(CASE WHEN r.PosiçãoFinal <= 3 THEN 1 END) AS Podiums
-                            FROM Resultados r
-                            WHERE r.NomeSessão = 'Race' 
-                              AND EXISTS (SELECT 1 FROM Grande_Prémio gp WHERE gp.Nome = r.NomeGP AND gp.Ano_Temporada = @Year)
-                            GROUP BY r.ID_Piloto
-                        )
                         SELECT 
-                            ROW_NUMBER() OVER (ORDER BY dp.TotalPoints DESC) AS Position,
-                            COALESCE(m.Nome, 'Unknown Driver') AS Driver,
-                            COALESCE(eq.Nome, 'Unknown Team') AS Team,
-                            dp.TotalPoints,
-                            dp.Wins,
-                            dp.Podiums
-                        FROM DriverPoints dp
-                        INNER JOIN Piloto p ON dp.ID_Piloto = p.ID_Piloto
-                        LEFT JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
-                        LEFT JOIN Equipa eq ON p.ID_Equipa = eq.ID_Equipa
-                        ORDER BY dp.TotalPoints DESC";
+                            ROW_NUMBER() OVER (ORDER BY ISNULL(SUM(r.Pontos), 0) DESC, COUNT(CASE WHEN r.PosiçãoFinal = 1 THEN 1 END) DESC) AS Position,
+                            ISNULL(m.Nome, 'Unknown Driver') AS Driver,
+                            ISNULL(e.Nome, 'No Team') AS Team,
+                            ISNULL(SUM(r.Pontos), 0) AS TotalPoints,
+                            COUNT(CASE WHEN r.PosiçãoFinal = 1 THEN 1 END) AS Wins,
+                            COUNT(CASE WHEN r.PosiçãoFinal <= 3 THEN 1 END) AS Podiums
+                        FROM Piloto p
+                        INNER JOIN Membros_da_Equipa m ON p.ID_Membro = m.ID_Membro
+                        INNER JOIN Equipa e ON p.ID_Equipa = e.ID_Equipa
+                        INNER JOIN Resultados r ON p.ID_Piloto = r.ID_Piloto
+                        INNER JOIN Grande_Prémio gp ON r.NomeGP = gp.NomeGP
+                        WHERE r.NomeSessão = 'Race' AND gp.Ano_Temporada = @Year
+                        GROUP BY p.ID_Piloto, m.Nome, e.Nome
+                        HAVING ISNULL(SUM(r.Pontos), 0) > 0
+                        ORDER BY TotalPoints DESC, Wins DESC";
                     
                     SqlCommand cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@Year", year);
@@ -834,27 +832,20 @@ namespace ProjetoFBD
                 {
                     conn.Open();
                     string query = @"
-                        WITH TeamPoints AS (
-                            SELECT 
-                                p.ID_Equipa,
-                                SUM(r.Pontos) AS TotalPoints,
-                                COUNT(CASE WHEN r.PosiçãoFinal = 1 THEN 1 END) AS Wins,
-                                COUNT(CASE WHEN r.PosiçãoFinal <= 3 THEN 1 END) AS Podiums
-                            FROM Resultados r
-                            INNER JOIN Piloto p ON r.ID_Piloto = p.ID_Piloto
-                            WHERE r.NomeSessão = 'Race'
-                              AND EXISTS (SELECT 1 FROM Grande_Prémio gp WHERE gp.Nome = r.NomeGP AND gp.Ano_Temporada = @Year)
-                            GROUP BY p.ID_Equipa
-                        )
                         SELECT 
-                            ROW_NUMBER() OVER (ORDER BY tp.TotalPoints DESC) AS Position,
-                            eq.Nome AS Team,
-                            tp.TotalPoints,
-                            tp.Wins,
-                            tp.Podiums
-                        FROM TeamPoints tp
-                        INNER JOIN Equipa eq ON tp.ID_Equipa = eq.ID_Equipa
-                        ORDER BY tp.TotalPoints DESC";
+                            ROW_NUMBER() OVER (ORDER BY ISNULL(SUM(r.Pontos), 0) DESC, COUNT(CASE WHEN r.PosiçãoFinal = 1 THEN 1 END) DESC) AS Position,
+                            e.Nome AS Team,
+                            ISNULL(SUM(r.Pontos), 0) AS TotalPoints,
+                            COUNT(CASE WHEN r.PosiçãoFinal = 1 THEN 1 END) AS Wins,
+                            COUNT(CASE WHEN r.PosiçãoFinal <= 3 THEN 1 END) AS Podiums
+                        FROM Equipa e
+                        INNER JOIN Piloto p ON e.ID_Equipa = p.ID_Equipa
+                        INNER JOIN Resultados r ON p.ID_Piloto = r.ID_Piloto
+                        INNER JOIN Grande_Prémio gp ON r.NomeGP = gp.NomeGP
+                        WHERE r.NomeSessão = 'Race' AND gp.Ano_Temporada = @Year
+                        GROUP BY e.ID_Equipa, e.Nome
+                        HAVING ISNULL(SUM(r.Pontos), 0) > 0
+                        ORDER BY TotalPoints DESC, Wins DESC";
                     
                     SqlCommand cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@Year", year);
